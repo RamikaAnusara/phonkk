@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PHONK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #0a0612;
+      --dark:    #0d0a18;
+      --card:    #1a0f2a;
+      --red:     #0F828C;
+      --red-dim: #065084;
+      --orange:  #78B9B5;
+      --cream:   #e8e0d8;
+      --muted:   #3a4a55;
+      --border:  rgba(15,130,140,0.18);
+      --border2: rgba(15,130,140,0.35);
+    }
+
+    html { scroll-behavior: smooth; cursor: none; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--black);
+      color: var(--cream);
+      line-height: 1.6;
+      cursor: none;
+      overflow-x: hidden;
+    }
+    a, button { cursor: none; }
+
+    /* ── CUSTOM CURSOR ── */
+    #cursor-dot {
+      position: fixed;
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%,-50%);
+      transition: width .15s, height .15s, background .2s;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 34px; height: 34px;
+      border: 1.5px solid var(--red);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: width .28s ease, height .28s ease, border-color .28s, opacity .2s;
+      opacity: 0.5;
+    }
+    body.cursor-hover #cursor-dot { width: 11px; height: 11px; background: var(--orange); }
+    body.cursor-hover #cursor-ring { width: 52px; height: 52px; border-color: var(--orange); opacity: 0.35; }
+    body.cursor-click #cursor-dot { transform: translate(-50%,-50%) scale(0.5); }
+
+    /* ── SCANLINES ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.06) 2px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 1.5rem 3rem;
+      border-bottom: 0.5px solid rgba(255,255,255,0.05);
+      background: rgba(6,6,8,0.98);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: sticky; top: 0; z-index: 200;
+      transition: border-color 0.4s;
+    }
+    nav.scrolled { border-color: rgba(15,130,140,0.12); }
+
+    .nav-left { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-right { display: flex; gap: 2.5rem; list-style: none; justify-content: flex-end; }
+
+    .nav-left a, .nav-right a {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(232,224,216,0.35);
+      text-decoration: none;
+      transition: color 0.25s;
+    }
+    .nav-left a:hover, .nav-right a:hover { color: rgba(232,224,216,0.9); }
+
+    .nav-logo {
+      text-align: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.3em;
+      color: var(--cream);
+      text-decoration: none;
+      transition: color 0.25s;
+    }
+    .nav-logo:hover { color: #0F828C; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .hero-video {
+      position: absolute;
+      top: 50%; left: 50%;
+      min-width: 100%; min-height: 100%;
+      width: auto; height: auto;
+      z-index: 0;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(6,6,8,0.4) 0%,
+        rgba(6,6,8,0.8) 100%
+      );
+      z-index: 1;
+    }
+    .hero-eyebrow,
+    .hero-title,
+    .hero-sub,
+    .hero-actions,
+    .hero-tape { position: relative; z-index: 2; }
+    .hero-title { text-shadow: 0 0 30px rgba(233,87,147,0.4); }
+
+    /* red glow orbs */
+    .hero-orb1 {
+      position: absolute;
+      top: -100px; left: -100px;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139,0,0,0.18) 0%, transparent 65%);
+      filter: blur(60px);
+      animation: orbDrift1 10s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero-orb2 {
+      position: absolute;
+      bottom: -80px; right: -80px;
+      width: 420px; height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(80,0,120,0.18) 0%, transparent 65%);
+      filter: blur(50px);
+      animation: orbDrift2 12s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes orbDrift1 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50%      { transform: translate(40px,30px) scale(1.08); }
+    }
+    @keyframes orbDrift2 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50%      { transform: translate(-30px,-20px) scale(1.06); }
+    }
+
+    /* scrolling tape behind hero */
+    .hero-tape {
+      position: absolute;
+      top: 50%; left: 0;
+      transform: translateY(-50%);
+      width: 200%;
+      white-space: nowrap;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 180px;
+      color: rgba(139,0,0,0.05);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      animation: tapeDrift 18s linear infinite;
+      user-select: none;
+      z-index: 2;
+    }
+    @keyframes tapeDrift {
+      from { transform: translateY(-50%) translateX(0); }
+      to   { transform: translateY(-50%) translateX(-50%); }
+    }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 1.75rem;
+      position: relative; z-index: 3;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.1s;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(72px, 14vw, 160px);
+      line-height: 0.9;
+      letter-spacing: 0.06em;
+      color: var(--cream);
+      position: relative; z-index: 3;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.22s;
+      transition: color 0.4s ease, text-shadow 0.4s ease, letter-spacing 0.4s ease;
+      cursor: none;
+    }
+    .hero-title:hover {
+      color: #78B9B5;
+      letter-spacing: 0.09em;
+      text-shadow: 0 0 40px rgba(15,130,140,0.35), 0 2px 12px rgba(148,11,146,0.2);
+    }
+    .hero-title .accent { color: var(--red); }
+
+    .hero-sub {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 440px;
+      margin: 2rem auto 0;
+      line-height: 1.75;
+      position: relative; z-index: 3;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.4s;
+    }
+
+    .hero-actions {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 2.5rem;
+      position: relative; z-index: 3;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.55s;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      background: #fff;
+      color: #0d0a14;
+      border: none;
+      padding: 16px 40px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: none;
+      text-decoration: none;
+      display: inline-block;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: #0F828C;
+      transform: translateY(101%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .btn-primary span { position: relative; z-index: 1; transition: color 0.25s; }
+    .btn-primary:hover::before { transform: translateY(0); }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(15,130,140,0.3); }
+    .btn-primary:hover span { color: #fff; }
+    .btn-primary:active { transform: translateY(0); box-shadow: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(15,130,140,0.15);
+      padding: 13px 28px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: none;
+      text-decoration: none;
+      display: inline-block;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .btn-ghost:hover { border-color: var(--red); color: var(--cream); transform: translateY(-2px); }
+
+
+
+    /* ── TRACKS SECTION ── */
+    .tracks-section {
+      padding: 6rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+      background: #BFC6C4;
+    }
+    /* dark scanline overlay */
+    .tracks-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.03) 3px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* grain texture */
+    .tracks-section::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      background-size: 128px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+    .tracks-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    @keyframes glitchSweep {
+      0%,90%,100% { opacity: 0; transform: translateY(-100%); }
+      92%          { opacity: 1; transform: translateY(0); }
+      96%          { opacity: 0.3; transform: translateY(110%); }
+    }
+    .tracks-glitch-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(13,10,20,0.25), rgba(15,130,140,0.4), rgba(13,10,20,0.25), transparent);
+      pointer-events: none;
+      z-index: 2;
+      top: 0;
+      animation: glitchSweep 6s ease-in-out infinite;
+    }
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .section-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(13,10,20,0.4);
+      margin-bottom: 0.6rem;
+      font-weight: 400;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: #0d0a14;
+      line-height: 1.1;
+      position: relative;
+    }
+    .section-title::before,
+    .section-title::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      overflow: hidden;
+      color: #0d0a14;
+    }
+    .section-title::before {
+      left: 2px;
+      color: #0F828C;
+      clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+      animation: glitchTop 5s infinite;
+      opacity: 0;
+    }
+    .section-title::after {
+      left: -2px;
+      color: #320A6B;
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+      animation: glitchBot 5s infinite;
+      opacity: 0;
+    }
+    @keyframes glitchTop {
+      0%,88%,100% { opacity: 0; transform: translateX(0); }
+      90%          { opacity: 0.6; transform: translateX(-3px); }
+      93%          { opacity: 0; transform: translateX(3px); }
+    }
+    @keyframes glitchBot {
+      0%,88%,100% { opacity: 0; transform: translateX(0); }
+      91%          { opacity: 0.5; transform: translateX(3px); }
+      94%          { opacity: 0; transform: translateX(-2px); }
+    }
+    .section-count {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      color: rgba(13,10,20,0.3);
+      letter-spacing: 0.04em;
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    .track-list { display: flex; flex-direction: column; }
+    .track-item {
+      display: grid;
+      grid-template-columns: 40px 1fr auto auto;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem 1rem;
+      border-bottom: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 4px;
+      margin: 0 -1rem;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .track-item:first-child { border-top: 0.5px solid rgba(0,0,0,0.12); }
+    .track-item:hover .track-row { background: rgba(0,0,0,0.04); }
+    .track-item:hover .track-num { color: #0F828C; }
+    .track-item:hover .track-name { color: #0d0a14; }
+    .track-item:hover .track-tag { border-color: #0F828C; color: #0F828C; }
+    .track-item:hover .play-btn { opacity: 1; transform: scale(1); }
+
+    .track-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      color: rgba(13,10,20,0.22);
+      text-align: right;
+      transition: color 0.2s;
+      font-style: italic;
+    }
+    .track-info { min-width: 0; }
+    .track-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: rgba(13,10,20,0.8);
+      margin-bottom: 3px;
+      transition: color 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.01em;
+    }
+    .track-artist {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(13,10,20,0.38);
+      letter-spacing: 0.02em;
+    }
+    .track-tag {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10px;
+      padding: 3px 10px;
+      border: 0.5px solid rgba(13,10,20,0.18);
+      color: rgba(13,10,20,0.3);
+      white-space: nowrap;
+      transition: all 0.2s;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+    .play-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--red);
+      border: none;
+      cursor: none;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transform: scale(0.7);
+      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .play-btn::after {
+      content: '';
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid #fff;
+      margin-left: 2px;
+    }
+
+    /* ── ABOUT ── */
+    .about-section {
+      padding: 7rem 2.5rem;
+      background: var(--black);
+      border-top: 0.5px solid rgba(15,130,140,0.1);
+    }
+    .about-grid {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+    }
+    .about-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+      overflow: visible;
+      background: transparent;
+      border: none;
+      padding: 0;
+      transition: none;
+    }
+    .about-card::before { display: none; }
+    .about-card::after { display: none; }
+    .about-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      color: #0F828C;
+      opacity: 0.6;
+    }
+    .about-line {
+      width: 32px;
+      height: 1px;
+      background: rgba(15,130,140,0.35);
+      margin: -0.25rem 0;
+    }
+    .about-card h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.45;
+      color: rgba(232,224,216,0.75);
+      font-style: italic;
+    }
+    .about-card p {
+      font-size: 13px;
+      color: rgba(90,80,96,0.9);
+      line-height: 1.85;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 0.5px solid rgba(255,255,255,0.05);
+      padding: 5rem 3rem 2.5rem;
+      background: #040406;
+    }
+    .footer-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr 1fr;
+      gap: 3rem;
+      padding-bottom: 3.5rem;
+      border-bottom: 0.5px solid rgba(255,255,255,0.05);
+      margin-bottom: 2rem;
+    }
+    .footer-brand .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.3em;
+      color: var(--cream);
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .footer-brand p {
+      font-size: 12px;
+      color: rgba(90,80,96,0.7);
+      line-height: 1.8;
+      max-width: 200px;
+    }
+    .footer-col h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(15,130,140,0.5);
+      margin-bottom: 1.5rem;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.85rem; }
+    .footer-col ul li a, .footer-col ul li span {
+      font-size: 12px;
+      color: rgba(232,224,216,0.28);
+      text-decoration: none;
+      transition: color 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .footer-col ul li a:hover { color: rgba(232,224,216,0.8); }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-copy {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10px;
+      color: rgba(90,80,96,0.4);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── ARTWORK CAROUSEL ── */
+    .artwork-section {
+      padding: 3rem 0 4rem;
+      overflow: hidden;
+    }
+    .artwork-section-header {
+      padding: 0 2.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .artwork-track-wrapper {
+      overflow: hidden;
+      width: 100%;
+      mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+      cursor: grab;
+    }
+    .artwork-track-wrapper:active { cursor: grabbing; }
+    .artwork-track {
+      display: flex;
+      gap: 20px;
+      width: max-content;
+      animation: artworkScroll 60s linear infinite;
+      will-change: transform;
+    }
+    .artwork-track.paused { animation-play-state: paused; }
+    @keyframes artworkScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .artwork-card {
+      width: 680px;
+      height: 680px;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: transform 0.3s ease, border-color 0.3s, box-shadow 0.3s;
+    }
+    .artwork-card:hover {
+      transform: scale(1.06);
+      border-color: var(--border2);
+      box-shadow: 0 8px 30px rgba(15,130,140,0.2);
+    }
+    .artwork-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.88) saturate(0.9);
+      transition: filter 0.3s;
+    }
+    .artwork-card:hover img { filter: brightness(1) saturate(1.1); }
+
+    /* ── TRACKS WITH ARTWORK ── */
+    .track-item {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 0.5px solid rgba(0,0,0,0.1);
+      padding: 1rem 0;
+    }
+    .track-item:first-child { border-top: 0.5px solid rgba(0,0,0,0.1); }
+    .track-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+    .track-artwork {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .track-artwork img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.85);
+      transition: filter 0.2s;
+    }
+    .track-item:hover .track-artwork img { filter: brightness(1); }
+    .track-info { flex: 1; min-width: 0; }
+    .track-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(13,10,20,0.75);
+      margin-bottom: 3px;
+      transition: color 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-item:hover .track-name { color: #0d0a14; }
+    .track-artist { font-size: 12px; color: rgba(13,10,20,0.4); }
+    .track-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      border: 1px solid rgba(13,10,20,0.15);
+      color: rgba(13,10,20,0.35);
+      white-space: nowrap;
+      transition: all 0.2s;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .track-item:hover .track-tag { border-color: var(--red); color: var(--red); }
+    .play-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--red);
+      border: none;
+      cursor: none;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .play-btn::after {
+      content: '';
+      width: 0; height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 10px solid #fff;
+      margin-left: 3px;
+    }
+    .play-btn:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(233,87,147,0.4); }
+    .play-btn.active { background: var(--orange); }
+    .play-btn.active::after {
+      border-left: none;
+      width: 3px; height: 10px;
+      background: #fff;
+      border-radius: 1px;
+      box-shadow: 5px 0 0 #fff;
+      border-top: none;
+      border-bottom: none;
+    }
+    .spotify-player {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+      width: 100%;
+    }
+    .spotify-player.open { max-height: 90px; opacity: 1; }
+    .spotify-player iframe {
+      width: 100%; height: 80px;
+      border: none; border-radius: 6px;
+      margin-top: 0.75rem;
+    }
+
+    /* ── PLAY BUTTON PULSE ── */
+    @keyframes playPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(218,12,129,0.55); }
+      50%      { box-shadow: 0 0 0 10px rgba(15,130,140,0); }
+    }
+    @keyframes playRingExpand {
+      0%   { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0;   transform: translate(-50%,-50%) scale(2.2); }
+    }
+    .track-item:hover .play-btn {
+      opacity: 1;
+      transform: scale(1);
+      animation: playPulse 1.8s ease-in-out infinite;
+    }
+    .track-item:hover .play-btn:hover {
+      animation: none;
+      transform: scale(1.18);
+      box-shadow: 0 0 24px rgba(168,85,247,0.6);
+    }
+
+    /* ── BUTTON RIPPLE ── */
+    .btn-primary, .btn-ghost { overflow: hidden; }
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      transform: scale(0);
+      animation: rippleAnim 0.55s linear;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* ── ARTWORK CARD PARALLAX ── */
+    .artwork-card {
+      perspective: 600px;
+    }
+    .artwork-card img {
+      transition: filter 0.3s, transform 0.15s ease-out;
+    }
+    .artwork-card:hover img {
+      filter: brightness(1) saturate(1.1);
+    }
+
+    /* ── SCROLL COLOR SHIFT ── */
+    :root {
+      --shift-hue: 0deg;
+    }
+
+    /* ── ARTISTS SECTION ── */
+    .artists-section {
+      padding: 7rem 3rem;
+      background: #78B9B5;
+      border-top: 0.5px solid rgba(255,255,255,0.05);
+    }
+    .artists-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .artists-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      margin-top: 3.5rem;
+      border-top: 0.5px solid rgba(0,0,0,0.12);
+      border-left: 0.5px solid rgba(0,0,0,0.12);
+    }
+    .artist-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 2.5rem 1.75rem;
+      border-right: 0.5px solid rgba(0,0,0,0.12);
+      border-bottom: 0.5px solid rgba(0,0,0,0.12);
+      background: transparent;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+      cursor: none;
+    }
+    .artist-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, #320A6B, #065084);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+    .artist-card:hover { background: rgba(0,0,0,0.07); }
+    .artist-card:hover::after { transform: scaleX(1); }
+    .artist-card:hover .artist-name { color: #320A6B; }
+    .artist-card:hover .artist-avatar { border-color: rgba(50,10,107,0.5); }
+    .artist-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: transparent;
+      border: 0.5px solid rgba(0,0,0,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      color: rgba(50,10,107,0.65);
+      letter-spacing: 0.05em;
+      transition: border-color 0.3s, background 0.3s;
+      flex-shrink: 0;
+    }
+    .artist-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(0,0,0,0.65);
+      transition: color 0.3s;
+    }
+    .artist-tag {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.35);
+      margin-top: auto;
+    }
+    .artist-card:hover .artist-avatar {
+      border-color: #320A6B;
+      background: rgba(50,10,107,0.08);
+    }
+
+    /* ── LABELS SECTION ── */
+    .labels-section {
+      padding: 6rem 2.5rem;
+      background: var(--dark);
+      border-top: 0.5px solid rgba(15,130,140,0.1);
+    }
+    .labels-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .labels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid rgba(15,130,140,0.1);
+    }
+    .label-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.75rem 1.5rem;
+      border-right: 1px solid rgba(15,130,140,0.08);
+      border-bottom: 1px solid rgba(15,130,140,0.08);
+      background: var(--card);
+      transition: background 0.25s, border-color 0.25s;
+      cursor: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .label-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(15,130,140,0.06) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .label-card:hover { background: rgba(15,130,140,0.05); }
+    .label-card:hover::before { opacity: 1; }
+    .label-card:hover .label-dot { background: #0F828C; box-shadow: 0 0 10px rgba(15,130,140,0.6); }
+    .label-card:hover .label-name { color: var(--cream); }
+    .label-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(15,130,140,0.3);
+      flex-shrink: 0;
+      transition: background 0.25s, box-shadow 0.25s;
+    }
+    .label-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color 0.25s;
+      position: relative; z-index: 1;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      html, body { cursor: auto; }
+      #cursor-dot, #cursor-ring { display: none; }
+      nav { grid-template-columns: 1fr auto; padding: 1rem 1.25rem; }
+      .nav-right { display: none; }
+      .tracks-section, .contact-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .about-section { padding: 4rem 1.25rem; }
+      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .labels-section { padding: 4rem 1.25rem; }
+      .labels-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; }
+      .artists-section { padding: 4rem 1.25rem; }
+      .artists-grid { grid-template-columns: repeat(2, 1fr); border: 0.5px solid rgba(255,255,255,0.07); }
+      .artist-card { border-right: none; border-bottom: 0.5px solid rgba(255,255,255,0.07); }
+      .track-item { grid-template-columns: 32px 1fr auto; }
+      footer { flex-direction: column; gap: 8px; text-align: center; padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <nav id="navbar">
+    <ul class="nav-left">
+      <li><a href="#tracks">tracks</a></li>
+      <li><a href="#artists">artists</a></li>
+      <li><a href="#about">about</a></li>
+    </ul>
+    <a href="#" class="nav-logo">phonk</a>
+    <ul class="nav-right">
+      <li><a href="#labels">labels</a></li>
+      <li><a href="#about">about</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <!-- Video Background -->
+    <video autoplay muted loop playsinline class="hero-video">
+      <source src="your-video-link.mp4" type="video/mp4">
+    </video>
+
+    <!-- Dark Overlay -->
+    <div class="hero-overlay"></div>
+
+    <div class="hero-orb1"></div>
+    <div class="hero-orb2"></div>
+    <div class="hero-tape">PHONK &nbsp; FUNK &nbsp; PHONK &nbsp; FUNK &nbsp; PHONK &nbsp; FUNK &nbsp; PHONK &nbsp; FUNK &nbsp; PHONK &nbsp; FUNK &nbsp;</div>
+
+    <div class="hero-eyebrow">&#9632; Now playing — the underground</div>
+    <h1 class="hero-title">TRENDING<br><span class="accent">BRAZILIAN</span><br>PHONK / FUNK</h1>
+    <div class="hero-actions">
+      <a href="#tracks" class="btn-primary"><span>Browse tracks</span></a>
+    </div>
+  </section>
+
+  <!-- ARTWORK CAROUSEL — add your images below -->
+  <!-- HOW TO ADD ARTWORK:
+       1. Save your .jpg/.png files in the same folder as index.html
+       2. Replace artwork1.jpg, artwork2.jpg etc with your filenames
+       3. Add as many .artwork-card items as you want — the carousel loops automatically -->
+  <section class="artwork-section">
+    <div class="artwork-section-header">
+      <div class="section-label">&#9632; on rotation</div>
+    </div>
+    <div class="artwork-track-wrapper">
+      <div class="artwork-track" id="artworkTrack">
+        <!-- original set -->
+        <div class="artwork-card"><img src="no_batidao.jpg" alt="NO BATIDÃO - Slowed"/></div>
+        <div class="artwork-card"><img src="montagem.jpg" alt="MONTAGEM ALQUIMIA"/></div>
+        <div class="artwork-card"><img src="batidao_funk.jpg" alt="BATIDÃO FUNK"/></div>
+        <div class="artwork-card"><img src="funk_sereno.jpg" alt="FUNK SERENO"/></div>
+        <div class="artwork-card"><img src="chama.jpg" alt="CHAMA"/></div>
+        <!-- duplicated for seamless loop -->
+        <div class="artwork-card"><img src="no_batidao.jpg" alt="NO BATIDÃO - Slowed"/></div>
+        <div class="artwork-card"><img src="montagem.jpg" alt="MONTAGEM ALQUIMIA"/></div>
+        <div class="artwork-card"><img src="batidao_funk.jpg" alt="BATIDÃO FUNK"/></div>
+        <div class="artwork-card"><img src="funk_sereno.jpg" alt="FUNK SERENO"/></div>
+        <div class="artwork-card"><img src="chama.jpg" alt="CHAMA"/></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tracks-section" id="tracks">
+    <div class="tracks-glitch-line"></div>
+    <div class="tracks-inner">
+    <div class="section-header">
+      <div>
+        <div class="section-label">&#9632; trending now</div>
+        <div class="section-title" data-text="TRENDING PHONK / FUNK">TRENDING PHONK / FUNK</div>
+      </div>
+      <div class="section-count">05 tracks</div>
+    </div>
+    <div class="track-list">
+
+      <div class="track-item" id="track-1">
+        <div class="track-row">
+          <div class="track-artwork"><img src="montagem.jpg" alt="MONTAGEM ALQUIMIA"/></div>
+          <div class="track-info">
+            <div class="track-name">MONTAGEM ALQUIMIA</div>
+            <div class="track-artist">h6itam</div>
+          </div>
+          <div class="track-tag">phonk</div>
+          <button class="play-btn" aria-label="Play" onclick="toggleTrack('track-1','0Wms5IftbzNzmrAyXx4A33')"></button>
+        </div>
+        <div class="spotify-player" id="sp-track-1"></div>
+      </div>
+
+      <div class="track-item" id="track-2">
+        <div class="track-row">
+          <div class="track-artwork"><img src="funk_sereno.jpg" alt="FUNK SERENO"/></div>
+          <div class="track-info">
+            <div class="track-name">FUNK SERENO</div>
+            <div class="track-artist">DYSMANE, ICEDMANE</div>
+          </div>
+          <div class="track-tag">funk</div>
+          <button class="play-btn" aria-label="Play" onclick="toggleTrack('track-2','6sEaAMiV2arIueZetTSitj')"></button>
+        </div>
+        <div class="spotify-player" id="sp-track-2"></div>
+      </div>
+
+      <div class="track-item" id="track-3">
+        <div class="track-row">
+          <div class="track-artwork"><img src="no_batidao.jpg" alt="NO BATIDÃO"/></div>
+          <div class="track-info">
+            <div class="track-name">NO BATIDAO</div>
+            <div class="track-artist">slxughter, ZXKAI</div>
+          </div>
+          <div class="track-tag">funk</div>
+          <button class="play-btn" aria-label="Play" onclick="toggleTrack('track-3','7vg9noSnFEyPfwLiaCW4vi')"></button>
+        </div>
+        <div class="spotify-player" id="sp-track-3"></div>
+      </div>
+
+      <div class="track-item" id="track-4">
+        <div class="track-row">
+          <div class="track-artwork"><img src="batidao_funk.jpg" alt="NO BATIDAO FUNK"/></div>
+          <div class="track-info">
+            <div class="track-name">NO BATIDAO FUNK</div>
+            <div class="track-artist">slxughter, ZXKAI</div>
+          </div>
+          <div class="track-tag">funk</div>
+          <button class="play-btn" aria-label="Play" onclick="toggleTrack('track-4','3c5Mnlez9S2dDIRjFHfDk0')"></button>
+        </div>
+        <div class="spotify-player" id="sp-track-4"></div>
+      </div>
+
+      <div class="track-item" id="track-5">
+        <div class="track-row">
+          <div class="track-artwork"><img src="chama.jpg" alt="CHAMA"/></div>
+          <div class="track-info">
+            <div class="track-name">MONTAGEM CHAMANDO</div>
+            <div class="track-artist">DJ FKU</div>
+          </div>
+          <div class="track-tag">phonk</div>
+          <button class="play-btn" aria-label="Play" onclick="toggleTrack('track-5','6etoe5vG5rmzEfNVUftn4i')"></button>
+        </div>
+        <div class="spotify-player" id="sp-track-5"></div>
+      </div>
+
+    </div>
+    </div>
+  </section>
+
+  <section class="artists-section" id="artists">
+    <div class="artists-inner">
+      <div class="section-label" style="color:rgba(0,0,0,0.4);">&#9632; the artists</div>
+      <div class="section-title" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,52px);letter-spacing:0.05em;line-height:1;margin-top:0.5rem;color:#0a0610;">FEATURED ARTISTS</div>
+      <div class="artists-grid">
+
+      <div class="artist-card">
+        <div class="artist-avatar">h6</div>
+        <div class="artist-name">h6itam</div>
+        <div class="artist-tag">phonk</div>
+      </div>
+
+      <div class="artist-card">
+        <div class="artist-avatar">DY</div>
+        <div class="artist-name">DYSMANE</div>
+        <div class="artist-tag">funk / phonk</div>
+      </div>
+
+      <div class="artist-card">
+        <div class="artist-avatar">SL</div>
+        <div class="artist-name">slxughter</div>
+        <div class="artist-tag">funk</div>
+      </div>
+
+      <div class="artist-card">
+        <div class="artist-avatar">FK</div>
+        <div class="artist-name">DJ FKU</div>
+        <div class="artist-tag">phonk</div>
+      </div>
+
+      <div class="artist-card">
+        <div class="artist-avatar">NK</div>
+        <div class="artist-name">Nakama</div>
+        <div class="artist-tag">phonk / drift</div>
+      </div>
+
+    </div>
+    </div>
+  </section>
+
+  <section class="about-section" id="about">
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-num">01</div>
+        <div class="about-line"></div>
+        <h2>Built for phonk heads, by phonk heads.</h2>
+        <p>A curated space for the darkest, heaviest phonk and funk sounds coming out of the underground — no mainstream filler.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-num">02</div>
+        <div class="about-line"></div>
+        <h2>Fresh drops, updated weekly.</h2>
+        <p>Every track is hand-picked and updated every week. If it slaps hard enough, it lands here. That's the only criteria.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="labels-section" id="labels">
+    <div class="labels-inner">
+      <div class="section-label">&#9632; labels</div>
+      <div class="section-title" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,52px);letter-spacing:0.05em;line-height:1;margin-top:0.5rem;margin-bottom:2.5rem;">UNRELEASED MUSIC</div>
+      <div class="labels-grid">
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">Black17 Media</span></div>
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">Scarscheme Records</span></div>
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">Rubix Records</span></div>
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">MANIAC</span></div>
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">Sketch Music</span></div>
+        <div class="label-card"><span class="label-dot"></span><span class="label-name">broke.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <span class="footer-logo">phonk</span>
+          <p>Curating the darkest, heaviest Brazilian phonk & funk sounds from the underground.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navigate</h4>
+          <ul>
+            <li><a href="#tracks">Tracks</a></li>
+            <li><a href="#artists">Artists</a></li>
+            <li><a href="#labels">Labels</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Socials</h4>
+          <ul>
+            <li><a href="#">Instagram</a></li>
+            <li><a href="#">TikTok</a></li>
+            <li><a href="#">Spotify</a></li>
+            <li><a href="#">YouTube</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Labels</h4>
+          <ul>
+            <li><span>Black17 Media</span></li>
+            <li><span>Scarscheme Records</span></li>
+            <li><span>Rubix Records</span></li>
+            <li><span>MANIAC</span></li>
+            <li><span>Sketch Music</span></li>
+            <li><span>broke.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-copy">© 2026 phonk — underground forever</div>
+        <div class="footer-copy">Brazilian Phonk / Funk</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Spotify inline toggle ── */
+    function toggleTrack(trackId, spotifyId) {
+      const player = document.getElementById('sp-' + trackId);
+      const btn = document.querySelector('#' + trackId + ' .play-btn');
+      const isOpen = player.classList.contains('open');
+
+      // close all others
+      document.querySelectorAll('.spotify-player').forEach(p => p.classList.remove('open'));
+      document.querySelectorAll('.play-btn').forEach(b => b.classList.remove('active'));
+
+      if (!isOpen) {
+        if (!player.innerHTML.trim()) {
+          player.innerHTML = `<iframe
+            src="https://open.spotify.com/embed/track/${spotifyId}?utm_source=generator&theme=0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"></iframe>`;
+        }
+        player.classList.add('open');
+        btn.classList.add('active');
+      }
+    }
+
+    /* ── Artwork carousel — hover pause + drag scrub ── */
+    const track    = document.getElementById('artworkTrack');
+    const wrapper  = track.parentElement;
+    let isDragging = false;
+    let startX     = 0;
+    let currentX   = 0;
+    let animOffset = 0;
+
+    /* Pause on hover */
+    wrapper.addEventListener('mouseenter', () => track.classList.add('paused'));
+    wrapper.addEventListener('mouseleave', () => {
+      if (!isDragging) track.classList.remove('paused');
+    });
+
+    /* Drag to scrub */
+    wrapper.addEventListener('mousedown', e => {
+      isDragging = true;
+      startX = e.clientX;
+      track.classList.add('paused');
+      const style = window.getComputedStyle(track);
+      const matrix = new DOMMatrix(style.transform);
+      animOffset = matrix.m41;
+      track.style.transform = `translateX(${animOffset}px)`;
+      track.style.animation = 'none';
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const delta = e.clientX - startX;
+      let newX = animOffset + delta;
+      const halfWidth = track.scrollWidth / 2;
+      /* wrap so it loops seamlessly */
+      if (newX > 0) newX -= halfWidth;
+      if (newX < -halfWidth) newX += halfWidth;
+      track.style.transform = `translateX(${newX}px)`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      /* resume animation from current position */
+      const style = window.getComputedStyle(track);
+      const matrix = new DOMMatrix(style.transform);
+      const curX = matrix.m41;
+      const halfWidth = track.scrollWidth / 2;
+      const pct = (Math.abs(curX) / halfWidth) * 100;
+      track.style.animation = '';
+      track.style.transform = '';
+      track.style.animationDelay = `-${(pct / 100) * 60}s`;
+      track.classList.remove('paused');
+    });
+
+    /* Touch support */
+    wrapper.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      track.classList.add('paused');
+      const style = window.getComputedStyle(track);
+      const matrix = new DOMMatrix(style.transform);
+      animOffset = matrix.m41;
+      track.style.transform = `translateX(${animOffset}px)`;
+      track.style.animation = 'none';
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', e => {
+      const delta = e.touches[0].clientX - startX;
+      let newX = animOffset + delta;
+      const halfWidth = track.scrollWidth / 2;
+      if (newX > 0) newX -= halfWidth;
+      if (newX < -halfWidth) newX += halfWidth;
+      track.style.transform = `translateX(${newX}px)`;
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', () => {
+      const style = window.getComputedStyle(track);
+      const matrix = new DOMMatrix(style.transform);
+      const curX = matrix.m41;
+      const halfWidth = track.scrollWidth / 2;
+      const pct = (Math.abs(curX) / halfWidth) * 100;
+      track.style.animation = '';
+      track.style.transform = '';
+      track.style.animationDelay = `-${(pct / 100) * 60}s`;
+      track.classList.remove('paused');
+    });
+
+    /* ── Button ripple ── */
+    document.querySelectorAll('.btn-primary, .btn-ghost').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const r = document.createElement('span');
+        r.className = 'ripple';
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+        btn.appendChild(r);
+        setTimeout(() => r.remove(), 600);
+      });
+    });
+
+    /* ── About cards 3D tilt ── */
+    document.querySelectorAll('.about-card, .artist-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width  - 0.5;
+        const y = (e.clientY - rect.top)  / rect.height - 0.5;
+        card.style.transform = `perspective(700px) rotateY(${x * 14}deg) rotateX(${-y * 14}deg) translateZ(8px)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(700px) rotateY(0) rotateX(0) translateZ(0)';
+        card.style.transition = 'transform 0.5s ease, border-color 0.3s, box-shadow 0.3s';
+      });
+      card.addEventListener('mouseenter', () => {
+        card.style.transition = 'transform 0.1s ease, border-color 0.3s, box-shadow 0.3s';
+      });
+    });
+
+    /* ── Artwork cards parallax depth on hover ── */
+    document.querySelectorAll('.artwork-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width  - 0.5;
+        const y = (e.clientY - rect.top)  / rect.height - 0.5;
+        card.querySelector('img').style.transform = `scale(1.07) translate(${x * -12}px, ${y * -12}px)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.querySelector('img').style.transform = 'scale(1) translate(0,0)';
+      });
+    });
+
+    /* ── Scroll color theme shift ── */
+    window.addEventListener('scroll', () => {
+      const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      // shifts accent from purple → deep red → back to purple as you scroll
+      const hue = Math.round(180 + pct * 60);
+      document.documentElement.style.setProperty('--red', `hsl(${hue}, 80%, 45%)`);
+      document.documentElement.style.setProperty('--border', `hsla(${hue}, 80%, 45%, 0.18)`);
+      document.documentElement.style.setProperty('--border2', `hsla(${hue}, 80%, 45%, 0.35)`);
+    }, { passive: true });
+
+    /* ── Custom cursor ── */
+    const dot  = document.getElementById('cursor-dot');
+    const ring = document.getElementById('cursor-ring');
+    let mx = -200, my = -200, rx = -200, ry = -200;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.left = mx + 'px';
+      dot.style.top  = my + 'px';
+    });
+    (function lerp() {
+      rx += (mx - rx) * 0.1;
+      ry += (my - ry) * 0.1;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(lerp);
+    })();
+
+    const hoverEls = document.querySelectorAll('a, button, .track-item, .about-card');
+    hoverEls.forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+    document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
+    document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+
+    /* ── Nav scroll state ── */
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    /* ── Scroll reveal ── */
+    function revealOnScroll(selector, yOffset, delayStep) {
+      const els = document.querySelectorAll(selector);
+      els.forEach((el, i) => {
+        el.style.opacity = '0';
+        el.style.transform = `translateY(${yOffset}px)`;
+        el.style.transition = `opacity 0.5s ease ${i * delayStep}s, transform 0.5s ease ${i * delayStep}s`;
+      });
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.style.opacity = '1';
+            e.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, { threshold: 0.1 });
+      els.forEach(el => obs.observe(el));
+    }
+    revealOnScroll('.track-item', 16, 0.06);
+    revealOnScroll('.about-card', 20, 0.12);
+
+    /* ── Hero section parallax ── */
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      const title = document.querySelector('.hero-title');
+      if (title) {
+        title.style.transform = `translateY(${y * 0.18}px)`;
+        title.style.opacity = Math.max(0, 1 - y / 420);
+      }
+      const tape = document.querySelector('.hero-tape');
+      if (tape) tape.style.transform = `translateY(calc(-50% + ${y * 0.08}px))`;
+    }, { passive: true });
+
+    /* ── Form submit ── */
+    function handleSubmit(e) {
+      e.preventDefault();
+      const sp  = e.target.querySelector('button[type="submit"] span');
+      const btn = e.target.querySelector('button[type="submit"]');
+      sp.textContent = 'Sent ✓';
+      btn.style.background = '#8b0000';
+      btn.disabled = true;
+      setTimeout(() => {
+        sp.textContent = 'Send it';
+        btn.style.background = '';
+        btn.disabled = false;
+        e.target.reset();
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>
